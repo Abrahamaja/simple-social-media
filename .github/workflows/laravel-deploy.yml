@@ -5,7 +5,7 @@ on:
       - main
 
 env:
-  IMAGE_NAME: "${{ secrets.DOCKER_USER }}/abrahamklosesawedu-simple-social-media"
+  IMAGE_NAME: "${{ secrets.DOCKER_USER }}/abrahamaja-simple-social-media"
 
 jobs:
   run-mysql-in-docker:
@@ -19,6 +19,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
+      - run: echo $IMAGE_NAME   # 👈 debug
       - run: docker build -t $IMAGE_NAME .
       - uses: docker/login-action@v3
         with:
