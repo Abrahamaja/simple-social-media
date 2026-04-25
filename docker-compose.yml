@@ -1,5 +1,5 @@
 services:
   web:
-    image: ${DOCKER_USER}/abrahamklosesawedu-simple-social-media
+    image: ${DOCKER_USER}/abrahamaja-simple-social-media
     ports:
       - "8000:8000"
