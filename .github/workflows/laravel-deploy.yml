@@ -1,4 +1,6 @@
-name: Laravel Deploy
+name: Laravel application (Mysql)
+run-name: Build, Push and Deploy image simple social media
+
 on:
   push:
     branches:
@@ -6,58 +8,50 @@ on:
 
 env:
   IMAGE_NAME: "${{ secrets.DOCKER_USER }}/abrahamaja-simple-social-media"
+  DOCKER_USER: "${{ secrets.DOCKER_USER }}"
 
 jobs:
   run-mysql-in-docker:
     runs-on: self-hosted
     steps:
-      - name: Cleanup before mysql
-        run: docker system prune -a -f --volumes
+      - name: Delete container mysql if exist
+        continue-on-error: true
+        run: docker rm -f $(docker ps -a | grep 'mysql\|social\|media' | awk '{print $1}')
 
-      - name: Delete old container
-        run: docker rm -f $(docker ps -a | grep 'mysql' | awk '{print $1}') || true
-
-      - name: Run mysql
+      - name: Running mysql in container
         run: docker run -d --name mysql -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=social_media -p 3306:3306 mysql:5.7
+
+      - name: List docker container
+        run: docker ps -a
 
   build-push-image:
     needs: run-mysql-in-docker
     runs-on: self-hosted
     steps:
-      - name: Cleanup before build
-        run: docker system prune -a -f --volumes
-
-      - name: Checkout
+      - name: Check out repository code
         uses: actions/checkout@v4
 
-      - name: Debug image name
-        run: echo $IMAGE_NAME
-
-      - name: Build image
+      - name: Build Image
         run: docker build -t $IMAGE_NAME .
 
-      - name: Login DockerHub
+      - name: Login to Docker Registry
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASS }}
 
-      - name: Push image
+      - name: Push Image
         run: docker push $IMAGE_NAME
 
   deploy-social-media:
     needs: build-push-image
     runs-on: self-hosted
     steps:
-      - name: Cleanup before deploy
-        run: docker system prune -a -f --volumes
-
-      - name: Checkout
+      - name: Check out repository code
         uses: actions/checkout@v4
 
-      - name: Stop container
-        run: docker compose down --rmi all || true
+      - name: stop and remove existing container
+        run: docker-compose down --rmi all
 
-      - name: Run container
-        run: docker compose up -d
-
+      - name: start container
+        run: docker-compose up -d
